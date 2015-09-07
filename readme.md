@@ -11,6 +11,10 @@ This repository consist Java program for the purpose of migrating TNPM Wireless 
 1. TNPM Wireless 1.4
 2. Oracle Database
 
+### Assumption
+
+1. Migrate to a `Fresh/Empty` TNPM Wireless environment.
+
 ### Overview Procedure
 
 1. Migrate ALARM_DOCUMENT_CONTEXT.
