@@ -28,70 +28,23 @@ public class UpdateAlarms {
     Log.show("Make sure ALARM_TEMPLATES is exported to sink server.");
     Log.show("Make sure ALARM_DEFINITIONS is exported to sink server.");
     
+    Log.show("Make sure REPORTs are exported to sink server.");
+    
     Connection sourceConnection = BootStrap.getSourceConnection();
     Connection sinkConnection = BootStrap.getSinkConnection();
     
-    //Consolidate Technology Pack information from both servers
-    Log.show("Consolidate Technology Pack information from Source Server.");
-    ArrayList<TechPackDefinition> sourceTechPacks = 
-        TechnologyPackModel.getTechPackDefinitions(sourceConnection);
-    Log.show("Consolidate Technology Pack information from Sink Server.");
-    ArrayList<TechPackDefinition> sinkTechPacks = 
-        TechnologyPackModel.getTechPackDefinitions(sinkConnection);
+    // Consolidate Technology Pack information from both servers
+    HashMap<String, TechPackDefinition> enrichedTechPackInfo;
+    enrichedTechPackInfo = UpdateAlarms.getEnrichedTechPackInfo(
+        sourceConnection, sinkConnection);
+    // SOURCE_RULESET_ID -> SINK_TECHPACK_DEFINITION
     
-    Log.show("Correlate Technology Pack information between Source and Sink Server");
-    HashMap<String, TechPackDefinition> enricedTechPackInfo;
-    enricedTechPackInfo = new HashMap<String, TechPackDefinition>();
-    for (int i = 0; i < sourceTechPacks.size(); i++) {
-      for (int j = 0; j < sinkTechPacks.size(); j++) {
-
-        if (sourceTechPacks.get(i).techpackKey
-            .equals(sinkTechPacks.get(j).techpackKey)) {
-          
-          enricedTechPackInfo.put(
-              sourceTechPacks.get(i).ruleSetId, sinkTechPacks.get(j));
-          //Source RULESET_ID -> Sink OBJECT
-          
-          Log.show("[Technology Pack Definition] "
-              + "(Source) "
-              + sourceTechPacks.get(i) 
-              + " maps to "
-              + " (Sink) "
-              + sinkTechPacks.get(j));
-        }
-      }
-    }
-    
-    //Consolidate Report information from both servers
-    Log.show("Consolidate PWEB Report information from Source Server.");
-    ArrayList<ReportDefinition> sourceReports = 
-        ReportModel.getReportDefinitions(sourceConnection);
-    Log.show("Consolidate PWEB Report information from Sink Server.");
-    ArrayList<ReportDefinition> sinkReports = 
-        ReportModel.getReportDefinitions(sinkConnection);
-    
+    // Consolidate Report information from both servers
     HashMap<String, ReportDefinition> enrichedReportInfo;
-    enrichedReportInfo = new HashMap<String, ReportDefinition>();
-    for (int i = 0; i < sourceReports.size(); i++) {
-      for (int j = 0; j < sinkReports.size(); j++) {
-        
-        if (sourceReports.get(i).reportKey
-            .equals(sinkReports.get(j).reportKey)) {
-          
-          enrichedReportInfo.put(
-              sourceReports.get(i).reportKey, sinkReports.get(j));
-          //Source REPORT_FOLDER|DOCUMENT_NAME -> Sink OBJECT
-          
-          Log.show("[Report Definition] " 
-              + "(Source) "
-              + sinkReports.get(i) 
-              + " maps to "
-              + " (Sink) "
-              + sinkReports.get(j));
-        }
-      }
-    }
-    
+    enrichedReportInfo = UpdateAlarms.getEnrichedReportInfo(
+        sourceConnection, sinkConnection);
+
+    // Stores all the SQL needed to update ALARMs
     ArrayList<String> SQL_STORE = new ArrayList<String>();
     
     Log.show("Consolidate ALARM_TEMPLATES from Sink server");
@@ -104,29 +57,9 @@ public class UpdateAlarms {
     
     //Update ALARM_TEMPLATES in Sink server with RULESET_ID
     Log.show("About to update ALARM_TEMPLATES on sink server with RULESET_ID");
-    
-    for (int i = 0; i < sinkAlarmTemplates.size(); i++) {
-      AlarmTemplateDefinition sinkAlarmTemplate = sinkAlarmTemplates.get(i);
-      
-      Log.show("Attempt to correlate RULESET_ID of " + sinkAlarmTemplate.ruleSetId);
-      if (enricedTechPackInfo.containsKey(sinkAlarmTemplate.ruleSetId)) {
-        TechPackDefinition tp = enricedTechPackInfo.get(sinkAlarmTemplate.ruleSetId);
-        Log.show("RULESET_ID of " + sinkAlarmTemplate.ruleSetId + " maps to " + tp.ruleSetId);
-        /*
-        Log.show("[SQL] (ALARM_TEMPLATES) Update " 
-            + sinkAlarmTemplate.templateName + " " 
-            + sinkAlarmTemplate.versionId + " " 
-            + "with RULESET_ID of "
-            + tp.ruleSetId);
-            */
-        String SQL = AlarmTemplatesSql.generateUpdateRuleSetId(
-            sinkAlarmTemplate.templateName, sinkAlarmTemplate.versionId, tp.ruleSetId);
-        Log.show("[SQL] (ALARM_TEMPLATES) " + SQL);
-        SQL_STORE.add(SQL);
-      } else {
-        Log.show("[WARN] (ALARM_TEMPLATES) RULESET_ID of " + sinkAlarmTemplate.ruleSetId + " does not have a correlation.");
-      }
-    }
+    SQL_STORE.addAll(
+        UpdateAlarms.getUpdateAlarmTemplateWithRuleSetIdSqls(
+            enrichedTechPackInfo, sinkAlarmTemplates));
     
     //Update ALARM_DEFINITIONS in Sink Server with RULESET_ID
     Log.show("About to update ALARM_DEFINITIONS on sink server with RULESET_ID");
@@ -135,8 +68,8 @@ public class UpdateAlarms {
       AlarmDefinition sinkAlarmDefinition = sinkAlarmDefinitions.get(i);
       
       Log.show("Attempt to correlate RULESET_ID of " + sinkAlarmDefinition.ruleSetId);
-      if (enricedTechPackInfo.containsKey(sinkAlarmDefinition.ruleSetId)) {
-        TechPackDefinition tp = enricedTechPackInfo.get(sinkAlarmDefinition.ruleSetId);
+      if (enrichedTechPackInfo.containsKey(sinkAlarmDefinition.ruleSetId)) {
+        TechPackDefinition tp = enrichedTechPackInfo.get(sinkAlarmDefinition.ruleSetId);
         Log.show("RULESET_ID of " + sinkAlarmDefinition.ruleSetId + " maps to " + tp.ruleSetId);
         /*
         Log.show("[SQL] (ALARM_DEFINITIONS) Update " 
@@ -154,10 +87,6 @@ public class UpdateAlarms {
         Log.show("[WARN] (ALARM_DEFINITIONS) RULESET_ID of " + sinkAlarmDefinition.ruleSetId + " does not have a correlation.");
       }
     }
-    
-    //for (String key : enrichedReportInfo.keySet()) {
-    //  Log.show("[DEBUG] " + key + "|_|" + enrichedReportInfo.get(key));
-    //}
     
     //Update ALARM_TEMPLATES in Sink server with REPORT
     Log.show("About to update ALARM_TEMPLATES on sink server with REPORT (Assumed 'sysadm' folder)");
@@ -256,5 +185,128 @@ public class UpdateAlarms {
     } catch (Exception ex) {
       ex.printStackTrace();
     }
+  }
+  
+  /**
+   * @param sourceConnection
+   * @param sinkConnection target DB connection
+   * @return HashMap<String, TechPackDefinition>
+   */
+  public static HashMap<String, TechPackDefinition> getEnrichedTechPackInfo(
+      Connection sourceConnection, Connection sinkConnection) {
+    
+    Log.show("Consolidate Technology Pack information from Source Server.");
+    ArrayList<TechPackDefinition> sourceTechPacks = 
+        TechnologyPackModel.getTechPackDefinitions(sourceConnection);
+    
+    Log.show("Consolidate Technology Pack information from Sink Server.");
+    ArrayList<TechPackDefinition> sinkTechPacks = 
+        TechnologyPackModel.getTechPackDefinitions(sinkConnection);
+    
+    Log.show("Correlate Technology Pack information between Source and Sink Server");
+    
+    HashMap<String, TechPackDefinition> enrichedTechPackInfo;
+    enrichedTechPackInfo = new HashMap<String, TechPackDefinition>();
+    for (int i = 0; i < sourceTechPacks.size(); i++) {
+      for (int j = 0; j < sinkTechPacks.size(); j++) {
+
+        if (sourceTechPacks.get(i).techpackKey
+            .equals(sinkTechPacks.get(j).techpackKey)) {
+          
+          enrichedTechPackInfo.put(
+              sourceTechPacks.get(i).ruleSetId, sinkTechPacks.get(j));
+          //Source RULESET_ID -> TechPackDefinition
+          
+          Log.show("[Technology Pack Definition] "
+              + "(Source) "
+              + sourceTechPacks.get(i) 
+              + " maps to "
+              + " (Sink) "
+              + sinkTechPacks.get(j));
+        }
+      }
+    }
+    
+    return enrichedTechPackInfo;
+  }
+  
+  /**
+   * @param sourceConnection
+   * @param sinkConnection target DB connection
+   * @return HashMap<String, ReportDefinition>
+   * 
+   * String is REPORT_FOLDER|REPORT_NAME
+   */
+  public static HashMap<String, ReportDefinition> getEnrichedReportInfo(
+      Connection sourceConnection, Connection sinkConnection) {
+    
+    Log.show("Consolidate PWEB Report information from Source Server.");
+    ArrayList<ReportDefinition> sourceReports = 
+        ReportModel.getReportDefinitions(sourceConnection);
+    
+    Log.show("Consolidate PWEB Report information from Sink Server.");
+    ArrayList<ReportDefinition> sinkReports = 
+        ReportModel.getReportDefinitions(sinkConnection);
+    
+    HashMap<String, ReportDefinition> enrichedReportInfo;
+    enrichedReportInfo = new HashMap<String, ReportDefinition>();
+    for (int i = 0; i < sourceReports.size(); i++) {
+      for (int j = 0; j < sinkReports.size(); j++) {
+        
+        if (sourceReports.get(i).reportKey
+            .equals(sinkReports.get(j).reportKey)) {
+          
+          enrichedReportInfo.put(
+              sourceReports.get(i).reportKey, sinkReports.get(j));
+          //Source REPORT_FOLDER|DOCUMENT_NAME -> Sink OBJECT
+          
+          Log.show("[Report Definition] " 
+              + "(Source) "
+              + sinkReports.get(i) 
+              + " maps to "
+              + " (Sink) "
+              + sinkReports.get(j));
+        }
+      }
+    }
+    
+    return enrichedReportInfo;
+  }
+  
+  /**
+   * @param enrichedTechPackInfo consist TP information from both Source and Sink
+   * @param alarmTemplates consist of ALARM_TEMPLATES from Sink
+   * @return
+   */
+  public static ArrayList<String> getUpdateAlarmTemplateWithRuleSetIdSqls(
+      HashMap<String, TechPackDefinition> enrichedTechPackInfo,
+      ArrayList<AlarmTemplateDefinition> alarmTemplates) {
+    
+    ArrayList<String> SQL_STORE = new ArrayList<String>();
+    
+    for (int i = 0; i < alarmTemplates.size(); i++) {
+      AlarmTemplateDefinition sinkAlarmTemplate = alarmTemplates.get(i);
+      
+      Log.show("Attempt to correlate RULESET_ID of " + sinkAlarmTemplate.ruleSetId);
+      if (enrichedTechPackInfo.containsKey(sinkAlarmTemplate.ruleSetId)) {
+        TechPackDefinition tp = enrichedTechPackInfo.get(sinkAlarmTemplate.ruleSetId);
+        Log.show("RULESET_ID of " + sinkAlarmTemplate.ruleSetId + " maps to " + tp.ruleSetId);
+        /*
+        Log.show("[SQL] (ALARM_TEMPLATES) Update " 
+            + sinkAlarmTemplate.templateName + " " 
+            + sinkAlarmTemplate.versionId + " " 
+            + "with RULESET_ID of "
+            + tp.ruleSetId);
+            */
+        String SQL = AlarmTemplatesSql.generateUpdateRuleSetId(
+            sinkAlarmTemplate.templateName, sinkAlarmTemplate.versionId, tp.ruleSetId);
+        Log.show("[SQL] (ALARM_TEMPLATES) " + SQL);
+        SQL_STORE.add(SQL);
+      } else {
+        Log.show("[WARN] (ALARM_TEMPLATES) RULESET_ID of " + sinkAlarmTemplate.ruleSetId + " does not have a correlation.");
+      }
+    }
+    
+    return SQL_STORE;
   }
 }
