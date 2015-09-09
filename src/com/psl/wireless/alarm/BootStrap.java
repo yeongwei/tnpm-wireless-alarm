@@ -19,8 +19,8 @@ public class BootStrap {
 
   public static Connection getSourceConnection() {
     // SOURCE INFORMATION
-    String sourceDbName = "10.211.48.24";
-    String sourceDbPort = "1521";
+    String sourceDbName = "10.51.238.21";
+    String sourceDbPort = "1522";
     String sourceSid = "vtdb";
     String sourceDbUserName = "virtuo";
     String sourceDbPassword = "Virtuo01";
