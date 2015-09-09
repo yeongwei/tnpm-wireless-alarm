@@ -41,4 +41,13 @@ public class AlarmDefinitionsSql {
     
     return SQL;
   }
+  
+  public static String generateUpdateIsActiveToFalse() {
+    String SQL = "";
+    
+    SQL += "UPDATE ALARM_DEFINITIONS" + " ";
+    SQL += "SET IS_ACTIVE = 'F'";
+    
+    return SQL;
+  }
 }

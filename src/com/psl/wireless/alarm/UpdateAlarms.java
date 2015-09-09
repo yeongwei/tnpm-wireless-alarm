@@ -47,6 +47,9 @@ public class UpdateAlarms {
     // Stores all the SQL needed to update ALARMs
     ArrayList<String> SQL_STORE = new ArrayList<String>();
     
+    Log.show("Need to set ALARM_DEFINITIONS 'IS_ACTIVE' to 'F'");
+    SQL_STORE.add(AlarmDefinitionsSql.generateUpdateIsActiveToFalse());
+    
     Log.show("Consolidate ALARM_TEMPLATES from Sink server");
     ArrayList<AlarmTemplateDefinition> sinkAlarmTemplates =
         AlarmModel.getAlarmTemplates(sinkConnection);
@@ -80,7 +83,7 @@ public class UpdateAlarms {
             */
         String SQL = AlarmDefinitionsSql.generateUpdateRuleSetId(
             sinkAlarmDefinition.definitionName, sinkAlarmDefinition.versionId, 
-            sinkAlarmDefinition.ruleSetId);
+            tp.ruleSetId);
         Log.show("[SQL] (ALARM_DEFINITIONS) " + SQL);
         SQL_STORE.add(SQL);
       } else {
@@ -170,21 +173,32 @@ public class UpdateAlarms {
         try {
           executeConnection.rollback();
         } catch (Exception ex2) {
-          Log.show("[FATA] Unable to rollback error.");
+          Log.show("[FATA] Unable to rollback.");
         }
         
       }
     }
     
+    Log.show("About to commit.");
+    try {
+      executeConnection.commit();
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      Log.show("[FATA] Unable to commit.");
+    }
+    
     Log.show("Launch Alarm Manager to activate the alarms.");
     Log.show("Review LC_ALARM_DEFINITIONS to ensure alarms are activated correctly.");
     
+    // Development use, always rollback
+    /*
     try {
       Log.show("Safety rollback.");
       executeConnection.rollback();
     } catch (Exception ex) {
       ex.printStackTrace();
     }
+    */
   }
   
   /**

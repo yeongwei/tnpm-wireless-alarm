@@ -45,7 +45,7 @@ public class BootStrap {
 
   public static Connection getSinkConnection() {
     // SINK INFORMATION
-    String sinkDbName = "10.211.48.24";
+    String sinkDbName = "10.211.50.18";
     String sinkDbPort = "1521";
     String sinkSid = "vtdb";
     String sinkDbUserName = "virtuo";
