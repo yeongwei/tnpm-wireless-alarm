@@ -59,28 +59,21 @@ public class UpdateAlarms {
         AlarmModel.getAlarmDefinitions(sinkConnection);
     
     //Update ALARM_TEMPLATES in Sink server with RULESET_ID
-    Log.show("About to update ALARM_TEMPLATES on sink server with RULESET_ID");
+    Log.show("About to update ALARM_TEMPLATES on Sink server with RULESET_ID");
     SQL_STORE.addAll(
         UpdateAlarms.getUpdateAlarmTemplateWithRuleSetIdSqls(
             enrichedTechPackInfo, sinkAlarmTemplates));
     
     //Update ALARM_DEFINITIONS in Sink Server with RULESET_ID
-    Log.show("About to update ALARM_DEFINITIONS on sink server with RULESET_ID");
+    Log.show("About to update ALARM_DEFINITIONS on Sink server with RULESET_ID");
     
     for (int i = 0; i < sinkAlarmDefinitions.size(); i++) {
       AlarmDefinition sinkAlarmDefinition = sinkAlarmDefinitions.get(i);
       
-      Log.show("Attempt to correlate RULESET_ID of " + sinkAlarmDefinition.ruleSetId);
+      //Log.show("Attempt to correlate RULESET_ID of " + sinkAlarmDefinition.ruleSetId);
       if (enrichedTechPackInfo.containsKey(sinkAlarmDefinition.ruleSetId)) {
         TechPackDefinition tp = enrichedTechPackInfo.get(sinkAlarmDefinition.ruleSetId);
-        Log.show("RULESET_ID of " + sinkAlarmDefinition.ruleSetId + " maps to " + tp.ruleSetId);
-        /*
-        Log.show("[SQL] (ALARM_DEFINITIONS) Update " 
-            + sinkAlarmDefinition.definitionName + " " 
-            + sinkAlarmDefinition.versionId + " " 
-            + "with RULESET_ID of "
-            + tp.ruleSetId);
-            */
+        Log.show("RULESET_ID of (Source) " + sinkAlarmDefinition.ruleSetId + " maps to (Sink) " + tp.ruleSetId);
         String SQL = AlarmDefinitionsSql.generateUpdateRuleSetId(
             sinkAlarmDefinition.definitionName, sinkAlarmDefinition.versionId, 
             tp.ruleSetId);
@@ -92,7 +85,7 @@ public class UpdateAlarms {
     }
     
     //Update ALARM_TEMPLATES in Sink server with REPORT
-    Log.show("About to update ALARM_TEMPLATES on sink server with REPORT (Assumed 'sysadm' folder)");
+    Log.show("About to update ALARM_TEMPLATES on Sink server with REPORT (Assumed 'sysadm' folder)");
     for (int i = 0; i < sinkAlarmTemplates.size(); i++) {
       AlarmTemplateDefinition t = sinkAlarmTemplates.get(i);
       String reportKey = "sysadm" + "|" + t.mappedReportName;
@@ -110,7 +103,7 @@ public class UpdateAlarms {
     }
     
     //Update ALARM_DEFINITIONS in Sink Server with REPORT
-    Log.show("About to update ALARM_DEFINITIONS on sink server with REPORT");
+    Log.show("About to update ALARM_DEFINITIONS on Sink server with REPORT");
     for (int i = 0; i < sinkAlarmDefinitions.size(); i++) {
       AlarmDefinition d = sinkAlarmDefinitions.get(i);
       String reportKey = "sysadm" + "|" + d.mappedReportName;
@@ -250,6 +243,7 @@ public class UpdateAlarms {
    * @return HashMap<String, ReportDefinition>
    * 
    * String is REPORT_FOLDER|REPORT_NAME
+   * Source should have more reports than Sink
    */
   public static HashMap<String, ReportDefinition> getEnrichedReportInfo(
       Connection sourceConnection, Connection sinkConnection) {
@@ -301,10 +295,10 @@ public class UpdateAlarms {
     for (int i = 0; i < alarmTemplates.size(); i++) {
       AlarmTemplateDefinition sinkAlarmTemplate = alarmTemplates.get(i);
       
-      Log.show("Attempt to correlate RULESET_ID of " + sinkAlarmTemplate.ruleSetId);
+      //Log.show("Attempt to correlate RULESET_ID of " + sinkAlarmTemplate.ruleSetId);
       if (enrichedTechPackInfo.containsKey(sinkAlarmTemplate.ruleSetId)) {
         TechPackDefinition tp = enrichedTechPackInfo.get(sinkAlarmTemplate.ruleSetId);
-        Log.show("RULESET_ID of " + sinkAlarmTemplate.ruleSetId + " maps to " + tp.ruleSetId);
+        Log.show("RULESET_ID of (Source) " + sinkAlarmTemplate.ruleSetId + " maps to (Sink) " + tp.ruleSetId);
         /*
         Log.show("[SQL] (ALARM_TEMPLATES) Update " 
             + sinkAlarmTemplate.templateName + " " 
@@ -317,7 +311,9 @@ public class UpdateAlarms {
         Log.show("[SQL] (ALARM_TEMPLATES) " + SQL);
         SQL_STORE.add(SQL);
       } else {
-        Log.show("[WARN] (ALARM_TEMPLATES) RULESET_ID of " + sinkAlarmTemplate.ruleSetId + " does not have a correlation.");
+        Log.show("[WARN] (ALARM_TEMPLATES) "
+            + "RULESET_ID of (Source) " + sinkAlarmTemplate.ruleSetId + " does not have a correlation. "
+            + "Check is (Sink) Technology Pack is installed.");
       }
     }
     
