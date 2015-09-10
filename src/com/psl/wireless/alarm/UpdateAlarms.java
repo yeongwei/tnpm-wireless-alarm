@@ -66,24 +66,10 @@ public class UpdateAlarms {
     
     //Update ALARM_DEFINITIONS in Sink Server with RULESET_ID
     Log.show("About to update ALARM_DEFINITIONS on Sink server with RULESET_ID");
-    
-    for (int i = 0; i < sinkAlarmDefinitions.size(); i++) {
-      AlarmDefinition sinkAlarmDefinition = sinkAlarmDefinitions.get(i);
-      
-      //Log.show("Attempt to correlate RULESET_ID of " + sinkAlarmDefinition.ruleSetId);
-      if (enrichedTechPackInfo.containsKey(sinkAlarmDefinition.ruleSetId)) {
-        TechPackDefinition tp = enrichedTechPackInfo.get(sinkAlarmDefinition.ruleSetId);
-        Log.show("RULESET_ID of (Source) " + sinkAlarmDefinition.ruleSetId + " maps to (Sink) " + tp.ruleSetId);
-        String SQL = AlarmDefinitionsSql.generateUpdateRuleSetId(
-            sinkAlarmDefinition.definitionName, sinkAlarmDefinition.versionId, 
-            tp.ruleSetId);
-        Log.show("[SQL] (ALARM_DEFINITIONS) " + SQL);
-        SQL_STORE.add(SQL);
-      } else {
-        Log.show("[WARN] (ALARM_DEFINITIONS) RULESET_ID of " + sinkAlarmDefinition.ruleSetId + " does not have a correlation.");
-      }
-    }
-    
+    SQL_STORE.addAll(
+        UpdateAlarms.getUpdateAlarmDefinitionWithRuleSetIdSqls(
+            enrichedTechPackInfo, sinkAlarmDefinitions));
+
     //Update ALARM_TEMPLATES in Sink server with REPORT
     Log.show("About to update ALARM_TEMPLATES on Sink server with REPORT (Assumed 'sysadm' folder)");
     for (int i = 0; i < sinkAlarmTemplates.size(); i++) {
@@ -314,6 +300,32 @@ public class UpdateAlarms {
         Log.show("[WARN] (ALARM_TEMPLATES) "
             + "RULESET_ID of (Source) " + sinkAlarmTemplate.ruleSetId + " does not have a correlation. "
             + "Check is (Sink) Technology Pack is installed.");
+      }
+    }
+    
+    return SQL_STORE;
+  }
+  
+  public static ArrayList<String> getUpdateAlarmDefinitionWithRuleSetIdSqls(
+      HashMap<String, TechPackDefinition> enrichedTechPackInfo,
+      ArrayList<AlarmDefinition> alarmDifinitions) {
+    
+    ArrayList<String> SQL_STORE = new ArrayList<String>();
+    
+    for (int i = 0; i < alarmDifinitions.size(); i++) {
+      AlarmDefinition sinkAlarmDefinition = alarmDifinitions.get(i);
+      
+      //Log.show("Attempt to correlate RULESET_ID of " + sinkAlarmDefinition.ruleSetId);
+      if (enrichedTechPackInfo.containsKey(sinkAlarmDefinition.ruleSetId)) {
+        TechPackDefinition tp = enrichedTechPackInfo.get(sinkAlarmDefinition.ruleSetId);
+        Log.show("RULESET_ID of (Source) " + sinkAlarmDefinition.ruleSetId + " maps to (Sink) " + tp.ruleSetId);
+        String SQL = AlarmDefinitionsSql.generateUpdateRuleSetId(
+            sinkAlarmDefinition.definitionName, sinkAlarmDefinition.versionId, 
+            tp.ruleSetId);
+        Log.show("[SQL] (ALARM_DEFINITIONS) " + SQL);
+        SQL_STORE.add(SQL);
+      } else {
+        Log.show("[WARN] (ALARM_DEFINITIONS) RULESET_ID of " + sinkAlarmDefinition.ruleSetId + " does not have a correlation.");
       }
     }
     
