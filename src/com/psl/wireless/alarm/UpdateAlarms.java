@@ -77,14 +77,14 @@ public class UpdateAlarms {
       String reportKey = "sysadm" + "|" + t.mappedReportName;
       if (enrichedReportInfo.containsKey(reportKey)) {
         ReportDefinition r = enrichedReportInfo.get(reportKey);
-        Log.show("(ALARM_TEMPLATES) REPORT KEY of " + reportKey + " maps to " + r);
+        Log.show("(ALARM_TEMPLATES) REPORT KEY of (Source) " + reportKey + " maps to (Sink) " + r);
         
         String SQL = AlarmTemplatesSql.generateUpdateReportInfo(
             t.templateName, t.versionId, r.documentId, r.folderId);
         Log.show("[SQL] (ALARM_TEMPLATES) " + SQL);
         SQL_STORE.add(SQL);
       } else {
-        Log.show("[WARN] (ALARM_TEMPLATES) REPORT KEY of " + reportKey + " does not have a correlation.");
+        Log.show("[WARN] (ALARM_TEMPLATES) REPORT KEY of " + reportKey + " does not have a correlation in Sink.");
       }
     }
     
@@ -95,14 +95,18 @@ public class UpdateAlarms {
       String reportKey = "sysadm" + "|" + d.mappedReportName;
       if (enrichedReportInfo.containsKey(reportKey)) {
         ReportDefinition r = enrichedReportInfo.get(reportKey);
-        Log.show("(ALARM_DEFINITIONS) REPORT KEY of " + reportKey + " maps to " + r);
+        Log.show("(ALARM_DEFINITIONS) REPORT KEY of (Source) " + reportKey + " maps to (Sink) " + r);
         
         String SQL = AlarmDefinitionsSql.generateUpdateReportInfo(
             d.definitionName, d.versionId, r.documentId, r.folderId);
         Log.show("[SQL] (ALARM_DEFINITIONS) " + SQL);
         SQL_STORE.add(SQL);
-      } 
+      } else {
+        Log.show("[WARN] (ALARM_DEFINITIONS) REPORT KEY of " + reportKey + " does not have a correlation in Sink.");
+      }
     }
+    
+    //Execution of SQL will about to start here
     
     Log.show("About to execute " + SQL_STORE.size() + " SQLs.");
     Connection executeConnection = BootStrap.getSinkConnection();
@@ -230,6 +234,7 @@ public class UpdateAlarms {
    * 
    * String is REPORT_FOLDER|REPORT_NAME
    * Source should have more reports than Sink
+   * SOURCE_REPORT -> SINK_REPORT
    */
   public static HashMap<String, ReportDefinition> getEnrichedReportInfo(
       Connection sourceConnection, Connection sinkConnection) {
