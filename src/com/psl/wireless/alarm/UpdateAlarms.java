@@ -178,6 +178,7 @@ public class UpdateAlarms {
         
       }
     }
+    
     /*
     Log.show("About to commit.");
     try {
@@ -275,7 +276,7 @@ public class UpdateAlarms {
           
           Log.show("[Report Definition] " 
               + "(Source) "
-              + sinkReports.get(i) 
+              + sourceReports.get(i) 
               + " maps to "
               + " (Sink) "
               + sinkReports.get(j));
