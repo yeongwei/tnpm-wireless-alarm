@@ -24,7 +24,6 @@ public class TechnologyPackModel {
     ArrayList<TechPackDefinition> x = new ArrayList<TechPackDefinition>();
     try {
       Statement statement = connection.createStatement();
-      Log.show("[DEBUG] " + TECH_PACK_DEFINITION_SQL);
       ResultSet resultSet = statement.executeQuery(TECH_PACK_DEFINITION_SQL);
       while(resultSet.next()) {
         TechPackDefinition t = new TechPackDefinition(
