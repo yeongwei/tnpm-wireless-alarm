@@ -30,7 +30,7 @@ public class AlarmDefinitionsSql {
     SQL += "        '/AlarmDefinition/General/MappedReportID/text()', '##REPORT_ID##'" + "," + " ";
     SQL += "        '/AlarmDefinition/General/MappedReportFolderName/text()', '##FOLDER_ID##'" + " ";       
     SQL += "    )" + " ";
-    SQL += ")";
+    SQL += ")" + " ";
     SQL += "WHERE DEFINITION_NAME = '##DEFINITION_NAME##'" + " ";
     SQL += "AND VERSION_ID = '##VERSION_ID##'";
     

@@ -30,7 +30,7 @@ public class AlarmTemplatesSql {
     SQL += "        '/AlarmTemplate/General/MappedReportID/text()', '##REPORT_ID##'" + "," + " ";
     SQL += "        '/AlarmTemplate/General/MappedReportFolderName/text()', '##FOLDER_ID##'";
     SQL += "    )" + " ";
-    SQL += ")";
+    SQL += ")" + " ";
     SQL += "WHERE TEMPLATE_NAME = '##TEMPLATE_NAME##'" + " ";
     SQL += "AND VERSION_ID = '##VERSION_ID##'";
     
