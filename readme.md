@@ -49,4 +49,5 @@ This repository consist Java program for the purpose of migrating TNPM Wireless 
 
 ### Future Work (Code Resiliency)
 1. Use `java.util.logging` instead of standard out print.
-2. Error recovery logging. E.g. What to do upon reaching an error.
+2. Use `java.sql.PreparedStatement` instead of `String` to construct SQL.
+3. Error recovery type logging. E.g. What to do upon reaching an error.

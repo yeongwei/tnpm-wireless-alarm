@@ -162,7 +162,6 @@ public class UpdateAlarms {
       }
     }
     
-    /*
     Log.show("About to commit.");
     try {
       executeConnection.commit();
@@ -170,18 +169,19 @@ public class UpdateAlarms {
       ex.printStackTrace();
       Log.show("[FATA] Unable to commit.");
     }
-    */
     
     Log.show("Launch Alarm Manager to activate the alarms.");
     Log.show("Review LC_ALARM_DEFINITIONS to ensure alarms are activated correctly.");
     
     // Development use, always rollback
+    /*
     try {
       Log.show("Safety rollback.");
       executeConnection.rollback();
     } catch (Exception ex) {
       ex.printStackTrace();
     }
+    */
   }
   
   /**
